@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stream Overlays</title>
+<style>
+  /* Matching the overlays' color scheme stops the browser from painting an
+     opaque backdrop behind transparent iframes. If the alerts layer still
+     blocks the others, try ?scheme=light on the URL. */
+  :root { color-scheme: dark; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  /* Fixed 1920x1080 canvas, scaled to fit the window by the script below */
+  #stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* width/height are set by the script to match the window */
+    width: 1920px;
+    height: 1080px;
+    transform-origin: top left;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  #stage iframe {
+    position: absolute;
+    border: 0;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  /* Left side: campaigns */
+  #campaigns {
+    top: 0;
+    left: 0;
+    width: 440px;
+    height: 1085px;
+    z-index: 1;
+  }
+
+  /* Top right: major order */
+  #major-order {
+    top: 0;
+    right: 0;
+    width: 560px;
+    height: 480px;
+    z-index: 2;
+  }
+
+  /* Bottom: ticker */
+  #ticker {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    z-index: 3;
+  }
+
+  /* Full page: alerts (on top, doesn't block clicks on the layers below) */
+  #alerts {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <iframe id="campaigns"   src="https://divershub.app/overlay/campaigns?count=8" scrolling="no" allowtransparency="true"></iframe>
+    <iframe id="major-order" src="https://divershub.app/overlay/major-order" scrolling="no" allowtransparency="true"></iframe>
+    <iframe id="ticker"      src="https://divershub.app/overlay/ticker?theme=super-earth" scrolling="no" allowtransparency="true"></iframe>
+    <iframe id="alerts"      src="https://divershub.app/overlay/alerts?test=0" scrolling="no" allowtransparency="true"></iframe>
+  </div>
+
+  <script>
+    // Scale the 1920x1080 stage to fit whatever window / browser source it's in.
+    const stage = document.getElementById('stage');
+    // Overlays keep their native proportions; the stage is sized to the
+    // window so the right/bottom-anchored layers reach the real edges.
+    function fit() {
+      const w = window.innerWidth, h = window.innerHeight;
+      const s = Math.min(w / 1920, h / 1080);
+      stage.style.width = (w / s) + 'px';
+      stage.style.height = (h / s) + 'px';
+      stage.style.transform = 'scale(' + s + ')';
+    }
+    window.addEventListener('resize', fit);
+    fit();
+
+    // Optional URL switches for troubleshooting:
+    //   ?scheme=light        -> use a light color scheme instead of dark
+    //   ?hide=alerts,ticker  -> don't show those layers (campaigns, major-order, ticker, alerts)
+    const params = new URLSearchParams(location.search);
+    if (params.get('scheme') === 'light') {
+      document.documentElement.style.colorScheme = 'light';
+    }
+    (params.get('hide') || '').split(',').forEach(function (id) {
+      const el = document.getElementById(id.trim());
+      if (el) el.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
